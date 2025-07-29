@@ -727,7 +727,7 @@ def download_user_data():
             "success" : False ,
             "message" : "Internal Server Error (User data download api)",
             "error": str(err)
-        })
+        }), 500
 
 # fetches the upcoming bookings for a user to display 
 # in the dashboard
@@ -947,14 +947,14 @@ def edit_lot():
 
         db.session.commit()
 
-        return jsonify({"success": True, "message": "Lot updated successfully"})
+        return jsonify({"success": True, "message": "Lot updated successfully"}), 200
     except Exception as err:
         print(str(err))
         return jsonify({
             "success": False,
             "message" : "Internal Server Error (at edit lot)",
             "error" : str(err)
-        })
+        }), 500
     
 # delete lot
 @app.route("/deletelot", methods = ['POST'])
@@ -1049,7 +1049,7 @@ def glot():
                     "success" : True,
                     "message" : "Lot & slots data gathered",
                     "data" : location_slots
-            })
+            }), 200
     
     except Exception as e:
         return jsonify({

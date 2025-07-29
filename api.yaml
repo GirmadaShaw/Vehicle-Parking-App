@@ -1,0 +1,1564 @@
+openapi: 3.0.0
+info:
+  title: User Signup API
+  version: 1.0.0
+  description: API endpoint to register a new user by providing required details. The API validates email, phone number, sends OTP to email, and stores user data securely.
+
+paths:
+  /signup:
+    post:
+      summary: User Signup
+      description: Registers a new user with provided details and sends an OTP to the user's email.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                first_name:
+                  type: string
+                  example: John
+                last_name:
+                  type: string
+                  example: Doe
+                email:
+                  type: string
+                  format: email
+                  example: johndoe@gmail.com
+                phone:
+                  type: string
+                  example: "9876543210"
+                password:
+                  type: string
+                  format: password
+                  example: StrongPass@123
+              required:
+                - username
+                - first_name
+                - last_name
+                - email
+                - phone
+                - password
+      responses:
+        '200':
+          description: User registration successful and OTP sent to email.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User Registration Successful, OTP Mailed
+        '401':
+          description: Validation failed (Invalid data, duplicate user, or email sending failed).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Only G-Mail is accepted
+        '500':
+          description: Internal Server Error during signup.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (signup api)
+                  error:
+                    type: string
+                    example: Some error message
+  /login:
+    post:
+      summary: User Login
+      description: Authenticates a registered user using email and password, and returns a JWT token if successful.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: johndoe@gmail.com
+                password:
+                  type: string
+                  format: password
+                  example: StrongPass@123
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Login successful. Returns a JWT token in response and as a cookie.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Login Successful
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Validation failed (Invalid data, unregistered user, or invalid email format).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Register first
+        '402':
+          description: Incorrect password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Incorrect password
+        '500':
+          description: Internal Server Error during login.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (login api)
+                  error:
+                    type: string
+                    example: Some error message
+  /verify-otp:
+    post:
+      summary: Verify OTP
+      description: Verifies the OTP sent to the user's email during registration and activates the account if valid. Returns a JWT token upon successful verification.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: johndoe@gmail.com
+                otp:
+                  type: string
+                  example: "123456"
+              required:
+                - email
+                - otp
+      responses:
+        '200':
+          description: OTP verified successfully, user registration completed. Returns a JWT token in response and sets it in a cookie.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: OTP verified, registration successfull
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: OTP verification failed (Invalid or missing data, email not found, or OTP incorrect).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Invalid OTP
+        '500':
+          description: Internal Server Error during OTP verification.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (otp api)
+                  error:
+                    type: string
+                    example: Some error message
+  /reserve:
+    post:
+      summary: Reserve a Parking Slot
+      description: Allows an authenticated user to reserve a parking slot for a specified time range. The system validates the vehicle registration number and finds an available slot.
+      tags:
+        - Reservation
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name of the parking location.
+                  example: MIT Parking Lot
+                start_time:
+                  type: string
+                  format: date-time
+                  example: 2025-07-29T09:00:00
+                end_time:
+                  type: string
+                  format: date-time
+                  example: 2025-07-29T12:00:00
+                vehicle_registration_number:
+                  type: string
+                  example: MH12AB1234
+              required:
+                - name
+                - start_time
+                - end_time
+                - vehicle_registration_number
+      responses:
+        '200':
+          description: Reservation successful. Returns the reservation ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Seat reserved successfully
+                  reservation_id:
+                    type: integer
+                    example: 45
+        '401':
+          description: Missing or invalid token / Reservation not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Token expired
+        '402':
+          description: Slot unavailable or invalid registration number.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: No available slot for the selected time range
+        '500':
+          description: Internal Server Error during reservation process.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (reserve post api)
+                  error:
+                    type: string
+                    example: Some error message
+
+    put:
+      summary: Update Reservation Status
+      description: Allows an authenticated user to update the status of an existing reservation (e.g., cancel, complete).
+      tags:
+        - Reservation
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_status:
+                  type: string
+                  description: New status for the reservation (e.g., cancelled, completed).
+                  example: cancelled
+                location_name:
+                  type: string
+                  description: Name of the parking location.
+                  example: MIT Parking Lot
+              required:
+                - new_status
+                - location_name
+      responses:
+        '200':
+          description: Reservation status updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Reservation status updated to cancelled
+        '401':
+          description: Reservation not found for the user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Reservation not found
+        '402':
+          description: Token expired.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Token expired
+        '500':
+          description: Internal Server Error during reservation update.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (reserve PUT API)
+                  error:
+                    type: string
+                    example: Some error message
+
+    options:
+      summary: CORS Preflight for Reserve Endpoint
+      description: Handles CORS preflight requests for the `/reserve` endpoint.
+      tags:
+        - Reservation
+      responses:
+        '200':
+          description: Successful preflight response.
+  /get-reviews:
+    get:
+      summary: Get All Reviews
+      description: Retrieves all user reviews stored in the database, including username, rating, and review text.
+      tags:
+        - Reviews
+      responses:
+        '200':
+          description: Successfully fetched all reviews.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        username:
+                          type: string
+                          example: johndoe
+                        rating:
+                          type: integer
+                          example: 5
+                        review_text:
+                          type: string
+                          example: Great parking experience, very convenient!
+        '500':
+          description: Internal Server Error while retrieving reviews.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal server error (get-reviews api)
+                  error:
+                    type: string
+                    example: Some error message
+  /userdashboard:
+    get:
+      summary: Get User Dashboard Data
+      description: Retrieves the user's dashboard information including bookings, total parked hours, active bookings, most visited location, and monthly booking statistics. Uses JWT token stored in cookies for authentication.
+      tags:
+        - Dashboard
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Successfully fetched dashboard data (either from Redis cache or database).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Dashboard data fetched successfully from REDIS
+                  data:
+                    type: object
+                    properties:
+                      first_name:
+                        type: string
+                        example: John
+                      total_bookings:
+                        type: integer
+                        example: 12
+                      total_hours_parked:
+                        type: number
+                        format: float
+                        example: 45.5
+                      active_bookings:
+                        type: integer
+                        example: 2
+                      most_visited_location:
+                        type: string
+                        example: MIT Parking Lot
+                      monthly_chart_data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              example: 2025-07
+                            count:
+                              type: integer
+                              example: 3
+        '401':
+          description: Unauthorized user or user not found in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Unauthorized User
+        '402':
+          description: Token expired or invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Token expired
+        '500':
+          description: Internal Server Error while retrieving dashboard data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (in userdashboard route)
+                  error:
+                    type: string
+                    example: Some error message
+  /userdatadownload:
+    get:
+      summary: Download User Data Report
+      description: Generates and returns a detailed PDF report containing the user's reservations, payments, and reviews. The report is grouped by month and includes a summary section.
+      tags:
+        - Dashboard
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Successfully generated and downloaded the user report in PDF format.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized user or token expired.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Unauthorized User
+        '500':
+          description: Internal Server Error while generating the PDF report.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (User data download api)
+                  error:
+                    type: string
+                    example: Some error message
+  /userupcomingbookings:
+    get:
+      summary: Get Upcoming User Bookings
+      description: Fetches all upcoming (future) bookings for the authenticated user to display on their dashboard. Cancelled bookings are excluded.
+      tags:
+        - Dashboard
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Successfully fetched upcoming bookings.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    location:
+                      type: string
+                      example: MIT Parking Lot
+                    slot:
+                      type: string
+                      example: A12
+                    start_time:
+                      type: string
+                      format: date-time
+                      example: 2025-08-10T09:00:00
+                    end_time:
+                      type: string
+                      format: date-time
+                      example: 2025-08-10T12:00:00
+                    status:
+                      type: string
+                      example: booked
+        '401':
+          description: Token expired or user not found in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Token expired
+        '402':
+          description: Unauthorized user (missing token).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Unauthorized User
+        '500':
+          description: Internal Server Error while fetching upcoming bookings.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (in upcoming booking api)
+                  error:
+                    type: string
+                    example: Some error message
+  /payment:
+    post:
+      summary: Record User Payment
+      description: Creates a new payment record for an existing reservation. The API stores payment details such as amount, method, status, and transaction ID.
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reservation_id
+                - amount
+                - payment_method
+                - payment_status
+              properties:
+                reservation_id:
+                  type: integer
+                  example: 101
+                amount:
+                  type: number
+                  format: float
+                  example: 150.75
+                payment_method:
+                  type: string
+                  example: UPI
+                payment_status:
+                  type: string
+                  example: success
+                transaction_id:
+                  type: string
+                  example: TXN123456789
+      responses:
+        '200':
+          description: Payment successfully recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Payment recorded successfully
+                  payment_id:
+                    type: integer
+                    example: 55
+        '401':
+          description: Missing required fields or invalid request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Missing required payment fields
+        '404':
+          description: Reservation not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Reservation not found
+        '500':
+          description: Internal Server Error while creating payment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (create payment)
+                  error:
+                    type: string
+                    example: Some error message
+  /createlot:
+    post:
+      summary: Create a New Parking Lot
+      description: Creates a new parking location (lot) and automatically generates parking slots for it.
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - address_line1
+                - city
+                - state
+                - postal_code
+                - country
+                - phone
+                - total_slots
+                - hourly_rate
+                - is_active
+              properties:
+                name:
+                  type: string
+                  example: MIT Parking Lot
+                address_line1:
+                  type: string
+                  example: Kothrud Main Road
+                address_line2:
+                  type: string
+                  example: Near Metro Station
+                city:
+                  type: string
+                  example: Pune
+                state:
+                  type: string
+                  example: Maharashtra
+                postal_code:
+                  type: string
+                  example: 411038
+                country:
+                  type: string
+                  example: India
+                phone:
+                  type: string
+                  example: "9876543210"
+                total_slots:
+                  type: integer
+                  example: 50
+                hourly_rate:
+                  type: number
+                  format: float
+                  example: 30.0
+                is_active:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Parking lot created successfully with slots.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Lot created successfully
+        '401':
+          description: No data retrieved in request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: No data retrieved in request
+        '500':
+          description: Internal Server Error while creating parking lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (create-lot api)
+  /editlot:
+    put:
+      summary: Edit an Existing Parking Lot
+      description: Updates details of an existing parking location (lot) such as name, address, slots, rate, and status.
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lot_id
+              properties:
+                lot_id:
+                  type: integer
+                  example: 5
+                name:
+                  type: string
+                  example: MIT Parking Lot Updated
+                address_line1:
+                  type: string
+                  example: Kothrud Main Road
+                address_line2:
+                  type: string
+                  example: Near Metro Station
+                city:
+                  type: string
+                  example: Pune
+                state:
+                  type: string
+                  example: Maharashtra
+                postal_code:
+                  type: string
+                  example: 411038
+                country:
+                  type: string
+                  example: India
+                phone:
+                  type: string
+                  example: "9876543210"
+                total_slots:
+                  type: integer
+                  example: 60
+                hourly_rate:
+                  type: number
+                  format: float
+                  example: 35.0
+                is_active:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Parking lot details updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Lot updated successfully
+        '400':
+          description: Lot ID not provided in the request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Lot ID is required
+        '404':
+          description: Specified parking lot not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Lot not found
+        '500':
+          description: Internal Server Error while editing parking lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (at edit lot)
+                  error:
+                    type: string
+                    example: Some error message
+  /deletelot:
+    post:
+      summary: Delete a Parking Lot
+      description: Deletes an existing parking lot if it contains no slots. If any slots are still associated with the lot, deletion is blocked.
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: MIT Parking Lot
+      responses:
+        '200':
+          description: Parking lot deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Lot deleted successfully
+        '401':
+          description: Request body is empty or invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: No data retrieved in request
+        '402':
+          description: Lot cannot be deleted because it still has slots associated with it.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Cannot delete the slot unless empty
+        '500':
+          description: Internal Server Error during deletion process.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (delete-lot)
+                  error:
+                    type: string
+                    example: Some error message
+  /getlot:
+    get:
+      summary: Retrieve All Parking Lots with Slot Information
+      description: Fetches details of all parking lots, including their location, total slots, hourly rate, and currently occupied slots.
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Successfully retrieved parking lot data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Lot & slots data gathered
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                          example: Pune
+                        country:
+                          type: string
+                          example: India
+                        state:
+                          type: string
+                          example: Maharashtra
+                        postal_code:
+                          type: string
+                          example: 411038
+                        total_slots:
+                          type: integer
+                          example: 50
+                        hourly_rate:
+                          type: number
+                          example: 30.0
+                        occupied_slots:
+                          type: array
+                          items:
+                            type: string
+                          example: ["S1", "S2", "S3"]
+        '500':
+          description: Internal Server Error while retrieving parking lot data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Some error message
+  /getusers:
+    get:
+      summary: Retrieve All Users
+      description: Fetches a list of all registered users with their profile details. Intended for admin use.
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Successfully retrieved all user data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User data gathered
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                          example: 101
+                        username:
+                          type: string
+                          example: john_doe
+                        email:
+                          type: string
+                          example: john.doe@gmail.com
+                        first_name:
+                          type: string
+                          example: John
+                        last_name:
+                          type: string
+                          example: Doe
+                        phone:
+                          type: string
+                          example: "9876543210"
+                        is_admin:
+                          type: boolean
+                          example: false
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: "2025-07-29T10:15:00"
+                        updated_at:
+                          type: string
+                          format: date-time
+                          example: "2025-07-29T10:15:00"
+        '401':
+          description: No user data is available in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: No data available
+        '500':
+          description: Internal Server Error while fetching user data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Some error message
+  /getreservations:
+    get:
+      summary: Retrieve All Reservation Data
+      description: Fetches a list of all reservations with user details, lot information, slot details, and reservation status. Intended for admin use.
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Successfully retrieved reservation data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Reservations fetched successfully
+                  reservations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        reservation_id:
+                          type: integer
+                          example: 501
+                        user:
+                          type: object
+                          properties:
+                            user_id:
+                              type: integer
+                              example: 101
+                            username:
+                              type: string
+                              example: john_doe
+                            email:
+                              type: string
+                              example: john.doe@gmail.com
+                        lot:
+                          type: string
+                          example: MIT Parking Lot
+                        slot:
+                          type: string
+                          example: S12
+                        status:
+                          type: string
+                          example: occupied
+                        vehicle_registration_number:
+                          type: string
+                          example: MH12AB1234
+                        start_time:
+                          type: string
+                          format: date-time
+                          example: "2025-07-30T08:00:00"
+                        end_time:
+                          type: string
+                          format: date-time
+                          example: "2025-07-30T10:00:00"
+        '500':
+          description: Internal Server Error while fetching reservation data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error (get-reservations)
+                  error:
+                    type: string
+                    example: Some error message
+  /admindashboard:
+    get:
+      summary: Get Admin Dashboard Metrics
+      description: >
+        Returns key metrics for the admin dashboard, including total users, reservations, revenue, 
+        active parking lots, total slots, occupied slots, and available slots.  
+        Uses Redis caching for faster response when data is available in cache.
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Successfully retrieved admin dashboard metrics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Admin dashboard metrics fetched successfully
+                  metrics:
+                    type: object
+                    properties:
+                      total_users:
+                        type: integer
+                        example: 120
+                      total_reservations:
+                        type: integer
+                        example: 350
+                      total_revenue:
+                        type: number
+                        format: float
+                        example: 45230.75
+                      active_parking_lots:
+                        type: integer
+                        example: 5
+                      total_slots:
+                        type: integer
+                        example: 200
+                      occupied_slots:
+                        type: integer
+                        example: 130
+                      available_slots:
+                        type: integer
+                        example: 70
+        '500':
+          description: Internal Server Error while fetching dashboard metrics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Error fetching dashboard metrics
+  /lotstats:
+    get:
+      summary: Get Per-Lot Statistics
+      description: >
+        Fetches statistics for each parking lot, including total slots, occupied slots, available slots,
+        total reservations, and total revenue generated.  
+        This endpoint aggregates data per lot for analytics purposes.
+      tags:
+        - Parking Lots
+      responses:
+        '200':
+          description: Successfully retrieved statistics for all parking lots.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Per-lot statistics fetched successfully
+                  lot_stats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        lot_id:
+                          type: integer
+                          example: 1
+                        lot_name:
+                          type: string
+                          example: "Central Mall Parking"
+                        city:
+                          type: string
+                          example: "Pune"
+                        total_slots:
+                          type: integer
+                          example: 100
+                        occupied_slots:
+                          type: integer
+                          example: 65
+                        available_slots:
+                          type: integer
+                          example: 35
+                        total_reservations:
+                          type: integer
+                          example: 240
+                        total_revenue:
+                          type: number
+                          format: float
+                          example: 15300.50
+        '500':
+          description: Internal Server Error while fetching lot statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Error fetching per-lot stats
+  /userstats:
+    get:
+      summary: Get User Statistics
+      description: >
+        Provides user-related statistics including total users, new users in the last 30 days,
+        active users who made at least one reservation in the last 30 days, and the top 5 users
+        with the highest number of reservations.
+      tags:
+        - Users
+      responses:
+        '200':
+          description: Successfully fetched user statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User stats fetched successfully
+                  data:
+                    type: object
+                    properties:
+                      total_users:
+                        type: integer
+                        example: 120
+                      new_users_this_month:
+                        type: integer
+                        example: 15
+                      active_users:
+                        type: integer
+                        example: 45
+                      top_users:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            username:
+                              type: string
+                              example: "john_doe"
+                            reservations:
+                              type: integer
+                              example: 12
+        '500':
+          description: Internal Server Error while retrieving user statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Database connection failed
+  /financialstats:
+    get:
+      summary: Get Financial Statistics
+      description: >
+        Returns various financial metrics including total revenue, revenue generated in the last 30 days, 
+        breakdown of payments by method, and the latest 5 transactions.
+      tags:
+        - Financial
+      responses:
+        '200':
+          description: Successfully retrieved financial statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Financial stats fetched successfully
+                  data:
+                    type: object
+                    properties:
+                      total_revenue:
+                        type: number
+                        format: float
+                        example: 45200.50
+                      revenue_this_month:
+                        type: number
+                        format: float
+                        example: 8200.75
+                      payment_method_breakdown:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            method:
+                              type: string
+                              example: "Credit Card"
+                            count:
+                              type: integer
+                              example: 25
+                            total_amount:
+                              type: number
+                              format: float
+                              example: 15000.00
+                      latest_transactions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            payment_id:
+                              type: integer
+                              example: 101
+                            amount:
+                              type: number
+                              format: float
+                              example: 500.00
+                            method:
+                              type: string
+                              example: "UPI"
+                            status:
+                              type: string
+                              example: "Completed"
+                            date:
+                              type: string
+                              format: date-time
+                              example: "2025-07-28T14:30:00"
+                            transaction_id:
+                              type: string
+                              example: "TXN12345678"
+                            user:
+                              type: string
+                              example: "john_doe"
+                            lot:
+                              type: string
+                              example: "City Center Lot"
+        '500':
+          description: Internal Server Error while retrieving financial statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Database query failed
