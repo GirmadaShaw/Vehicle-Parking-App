@@ -1,0 +1,6 @@
+.env
+.venv/
+backend/__pycache__/
+vpa-frontend/node_modules/
+vpa-frontend/.vscode/
+backend/static/
